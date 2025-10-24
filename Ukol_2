@@ -1,0 +1,31 @@
+# Cesty k profilu
+echo $PROFILE
+
+# Otevření profilu v Poznámkovém bloku (pokud neexistuje, potvrď vytvoření)
+notepad $PROFILE
+# Do souboru vlož tyto dva řádky, ulož a zavři:
+ Write-Host "Execution policy: $(Get-ExecutionPolicy)" -ForegroundColor Yellow
+ Write-Host "Profile: $PROFILE" -ForegroundColor Green
+
+# Po uložení zavři a znovu otevři PowerShell - barevný text
+
+# Vytvoření aliasů
+Set-Alias np notepad.exe
+Set-Alias ct control.exe
+
+# Export aliasů do JSON
+Get-Alias np, ct | Select Name, Definition | ConvertTo-Json | Out-File aliasy.json -Encoding UTF8
+
+# Odstranění aliasů
+Remove-Item Alias:\np, Alias:\ct
+
+# Obnovení aliasů z JSON
+$json = Get-Content aliasy.json | ConvertFrom-Json
+foreach ($a in $json) { Set-Alias $a.Name $a.Definition }
+
+# Ověření funkčnosti aliasů
+Get-Alias np, ct
+np
+ct
+
+# otevře se notepad a ovládací panely
