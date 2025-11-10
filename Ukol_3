@@ -1,0 +1,32 @@
+# Zobrazení vlastností třídy pro správu tiskáren (Win32_Printer)
+(Get-CimClass -ClassName Win32_Printer).CimClassProperties | Select-Object Name, CimType
+
+
+# Změna umístění tiskárny Fax pomocí CIM
+Get-CimInstance -ClassName Win32_Printer -Filter "Name='Fax'" | Set-CimInstance -Property @{ Location = 'Kancelář 204' }
+
+
+# Zjištění aktuálního názvu (štítku) disku C:
+Get-CimInstance -ClassName Win32_Volume -Filter "DriveLetter='C:'" | Select-Object DriveLetter, Label
+
+# Přejmenování disku C: na "Systém"
+Get-CimInstance -ClassName Win32_Volume -Filter "DriveLetter='C:'" | Set-CimInstance -Property @{ Label = 'Systém' }
+
+
+# Vypsání nepoužitých lokálních účtů (bez CIM)
+Get-LocalUser | Where-Object { -not $_.LastLogon } | Select-Object Name, LastLogon
+
+# Vypsání uzamčených účtů v doméně (pokud jsme v AD)
+Search-ADAccount -LockedOut | Select-Object Name, SamAccountName
+
+
+# Stejné úlohy pomocí CIM:
+
+# Nepoužité účty pomocí CIM – NumberOfLogons = 0 znamená, že účet se nikdy nepřihlásil
+Get-CimInstance -ClassName Win32_NetworkLoginProfile |
+    Where-Object { $_.LocalAccount -eq $true -and $_.NumberOfLogons -eq 0 } |
+    Select-Object Name, FullName, NumberOfLogons
+
+# Uzamčené účty pomocí CIM – Lockout=True ukazuje uzamčené účty
+Get-CimInstance -ClassName Win32_UserAccount -Filter "LocalAccount=True AND Lockout=True" |
+    Select-Object Name, Disabled, Lockout
