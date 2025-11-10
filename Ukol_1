@@ -1,2 +1,4 @@
 Get-WinEvent -FilterHashtable @{LogName='System'; Level=2; StartTime=(Get-Date).AddDays(-10)} |
   Select TimeCreated, Id, LevelDisplayName, Message
+
+Powershell is awesome!
