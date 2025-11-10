@@ -1,0 +1,28 @@
+# Zjistit aktuální nastavení pro přihlašovací obrazovku
+Get-ItemProperty -Path 'Registry::HKEY_USERS\.DEFAULT\Control Panel\Keyboard' -Name InitialKeyboardIndicators
+
+# Zjistit aktuální nastavení pro právě přihlášeného uživatele
+Get-ItemProperty -Path 'HKCU:\Control Panel\Keyboard' -Name InitialKeyboardIndicators
+
+# Pokud není zapnuto (hodnota není "2"), nastav NA "2".
+# (Spusť tyto dva řádky jen když výpis výše neukazuje hodnotu 2.)
+Set-ItemProperty -Path 'Registry::HKEY_USERS\.DEFAULT\Control Panel\Keyboard' -Name InitialKeyboardIndicators -Value '2'
+Set-ItemProperty -Path 'HKCU:\Control Panel\Keyboard' -Name InitialKeyboardIndicators -Value '2'
+
+
+
+
+# Pro pořádek ho uložíme pod Software (HKCU\Software\PowerShell_Zkousky)
+$KeyPath = 'HKCU:\Software\PowerShell_Zkousky'
+
+# Vytvořit klíč (pokud už existuje, -Force ho ponechá)
+New-Item -Path $KeyPath -Force | Out-Null
+
+# Zapsat požadované hodnoty: uživatelské jméno, jméno počítače, aktuální datum, verze PowerShellu
+New-ItemProperty -Path $KeyPath -Name 'UserName'     -Value $env:USERNAME                              -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $KeyPath -Name 'ComputerName' -Value $env:COMPUTERNAME                           -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $KeyPath -Name 'CurrentDate'  -Value (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')    -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $KeyPath -Name 'PSVersion'    -Value $PSVersionTable.PSVersion.ToString()        -PropertyType String -Force | Out-Null
+
+# Potvrzení: vypsat zapsané hodnoty z registru
+Get-ItemProperty -Path $KeyPath | Select-Object UserName, ComputerName, CurrentDate, PSVersion
