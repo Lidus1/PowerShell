@@ -1,0 +1,68 @@
+
+$regPaths = @(
+    'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',          # 64bit programy
+    'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall', # 32bit programy na 64bit Windows
+    'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'           # programy instalované jen pro aktuálního uživatele
+)
+
+$regApps = foreach ($path in $regPaths) {
+    if (Test-Path $path) {
+        Get-ChildItem $path -ErrorAction SilentlyContinue | ForEach-Object {
+            $p = Get-ItemProperty -LiteralPath $_.PsPath -ErrorAction SilentlyContinue
+            if ($p.DisplayName) {
+                [PSCustomObject]@{
+                    Name            = $p.DisplayName
+                    Version         = $p.DisplayVersion
+                    Publisher       = $p.Publisher
+                    InstallDate     = $p.InstallDate
+                    InstallLocation = $p.InstallLocation
+                    UninstallString = $p.UninstallString
+                    Source          = "Registry: $path"
+                }
+            }
+        }
+    }
+}
+
+
+# (MSI balíčky, programy spravované přes PackageManagement / Chocolatey / atd.)
+$pkgApps = Get-Package -ErrorAction SilentlyContinue | ForEach-Object {
+    [PSCustomObject]@{
+        Name            = $_.Name
+        Version         = $_.Version.ToString()
+        Publisher       = $_.ProviderName
+        InstallDate     = $null
+        InstallLocation = $null
+        UninstallString = $null
+        Source          = "Get-Package ($($_.ProviderName))"
+    }
+}
+
+
+# (Moderní/UWP aplikace z Microsoft Store)
+$appxApps = Get-AppxPackage -ErrorAction SilentlyContinue | ForEach-Object {
+    [PSCustomObject]@{
+        Name            = $_.Name
+        Version         = $_.Version.ToString()
+        Publisher       = $_.PublisherDisplayName
+        InstallDate     = $_.InstallDate
+        InstallLocation = $_.InstallLocation
+        UninstallString = $null
+        Source          = "Get-AppxPackage"
+    }
+}
+
+
+# Sloučíme všechny seznamy, odstraníme null a deduplikujeme podle Name + Version
+$allApps = @($regApps + $pkgApps + $appxApps) | Where-Object { $_ -ne $null }
+
+$uniqueApps = $allApps |
+    Group-Object Name, Version | ForEach-Object {
+        # Z každé skupiny (stejné jméno + verze) vezmeme první záznam
+        $_.Group | Select-Object -First 1
+    } |
+    Sort-Object Name, Version
+
+# Výpis do tabulky v konzoli
+$uniqueApps | Format-Table Name, Version, Publisher, InstallDate, InstallLocation, UninstallString, Source -AutoSize
+

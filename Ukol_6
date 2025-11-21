@@ -1,1 +1,65 @@
 
+
+$numbers = 1..10 | ForEach-Object { Get-Random -Minimum 10 -Maximum 101 }
+
+"{0,5}{1,10}" -f "n", "n^2"
+"{0,5}{1,10}" -f "-"*3, "-"*4
+
+foreach ($n in $numbers) {
+    $sq = $n * $n
+    "{0,5}{1,10}" -f $n, $sq
+}
+
+Write-Host ""
+
+
+$text = "Kobyla má malý bok"
+
+$sortedChars = $text.ToCharArray() | Sort-Object
+$sortedText  = -join $sortedChars
+
+"Setříděné znaky: $sortedText"
+
+Write-Host ""
+
+
+function Is-Palindrome {
+    param([int]$Number)
+
+    $s = $Number.ToString()
+    $chars = $s.ToCharArray()
+    [array]::Reverse($chars)
+    $rev = -join $chars
+
+    return ($s -eq $rev)
+}
+
+$minPal = $null
+$minA = $null
+$minB = $null
+
+$maxPal = $null
+$maxA = $null
+$maxB = $null
+
+for ($a = 100; $a -le 999; $a++) {
+    for ($b = 100; $b -le 999; $b++) {
+        $p = $a * $b
+        if (Is-Palindrome $p) {
+            if ($null -eq $minPal -or $p -lt $minPal) {
+                $minPal = $p
+                $minA = $a
+                $minB = $b
+            }
+            if ($null -eq $maxPal -or $p -gt $maxPal) {
+                $maxPal = $p
+                $maxA = $a
+                $maxB = $b
+            }
+        }
+    }
+}
+
+"Nejmenší palindrom: $minPal = $minA × $minB"
+"Největší palindrom: $maxPal = $maxA × $maxB"
+

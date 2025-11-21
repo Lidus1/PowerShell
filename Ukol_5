@@ -1,1 +1,86 @@
 
+function Format-Size {
+    param([long]$Bytes)
+    switch ($Bytes) {
+        {$_ -ge 1GB} { return ("{0:N2} GB" -f ($Bytes/1GB)) }
+        {$_ -ge 1MB} { return ("{0:N2} MB" -f ($Bytes/1MB)) }
+        {$_ -ge 1KB} { return ("{0:N2} KB" -f ($Bytes/1KB)) }
+        default      { return ("{0} B"   -f $Bytes) }
+    }
+}
+
+
+while ($true) {
+    try {
+        Clear-Host
+
+        $current = Get-Location
+        Write-Host "Aktuální adresář: $current" -ForegroundColor Cyan
+        Write-Host ""
+
+        $dirs = Get-ChildItem -LiteralPath $current -Directory -Force -ErrorAction SilentlyContinue | Sort-Object Name
+        $show = $dirs | Select-Object -First 9
+
+        if (-not $show) {
+            Write-Host "(Žádné podadresáře)" -ForegroundColor DarkYellow
+        } else {
+            for ($i = 0; $i -lt $show.Count; $i++) {
+                $d = $show[$i]
+                $files = Get-ChildItem -LiteralPath $d.FullName -File -Force -ErrorAction SilentlyContinue
+
+                $count = ($files | Measure-Object).Count
+                if ($count -gt 0) {
+                    $small = $files | Sort-Object Length | Select-Object -First 1
+                    $large = $files | Sort-Object Length -Descending | Select-Object -First 1
+                    $smallTxt = "$($small.Name) ($(Format-Size $small.Length))"
+                    $largeTxt = "$($large.Name) ($(Format-Size $large.Length))"
+                } else {
+                    $smallTxt = "—"
+                    $largeTxt = "—"
+                }
+
+                $idx = $i + 1
+                Write-Host ("{0}) {1}" -f $idx, $d.Name) -ForegroundColor Green
+                Write-Host ("    souborů: {0} | nejmenší: {1} | největší: {2}" -f $count, $smallTxt, $largeTxt)
+            }
+
+            if ($dirs.Count -gt 9) {
+                Write-Host ""
+                Write-Host ("(Pozn.: Existuje dalších {0} podadresářů, zobrazeno jen prvních 9.)" -f ($dirs.Count - 9)) -ForegroundColor DarkGray
+            }
+        }
+
+        Write-Host ""
+        Write-Host "Ovládání: [1–9] = vstoupit | U = o úroveň výš | Q = konec" -ForegroundColor Yellow
+        Write-Host -NoNewline "Volba: "
+
+        $key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+
+        if ($key.Character -in @('q','Q')) { break }
+
+        if ($key.Character -in @('u','U')) {
+            $parent = Split-Path -LiteralPath $current -Parent
+            if (-not [string]::IsNullOrWhiteSpace($parent)) {
+                Set-Location -LiteralPath $parent
+            }
+            continue
+        }
+
+        if ($key.Character -match '^[1-9]$') {
+            $chosen = [int]$key.Character
+            $index = $chosen - 1
+            if ($index -ge 0 -and $index -lt $show.Count) {
+                Set-Location -LiteralPath $show[$index].FullName
+            }
+            continue
+        }
+
+        continue
+    }
+    catch {
+        Write-Host "Chyba: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "Stiskni libovolnou klávesu pro pokračování..."
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    }
+}
+

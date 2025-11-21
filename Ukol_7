@@ -1,0 +1,42 @@
+### skript ###
+
+# Souřadnice Brna
+$lat = 49.1951
+$lon = 16.6068
+
+# Cesta k souboru teploty.txt na ploše
+$desktop = [Environment]::GetFolderPath("Desktop")
+$outFile = Join-Path $desktop "teploty.txt"
+
+# URL Open-Meteo API bez klíče
+$url = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true"
+
+try {
+    # Získání dat o počasí
+    $response = Invoke-RestMethod -Uri $url -ErrorAction Stop
+
+    # Aktuální teplota v °C
+    $tempC = $response.current_weather.temperature
+
+    # Aktuální čas
+    $time = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+
+    # Zápis do souboru
+    "$time`t$tempC °C" | Out-File -FilePath $outFile -Append -Encoding UTF8
+}
+catch {
+    # Zápis chyby, pokud API neodpovídá
+    $time = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    "$time`tCHYBA: $($_.Exception.Message)" | Out-File -FilePath $outFile -Append -Encoding UTF8
+}
+
+
+### příkaz ###
+
+$scriptPath = Join-Path $env:UserProfile "Desktop\ZapisTeplotuBrno.ps1"
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
+$startTime = (Get-Date).AddMinutes(1)
+$trigger = New-ScheduledTaskTrigger -Once -At $startTime -RepetitionInterval (New-TimeSpan -Hours 1) -RepetitionDuration ([TimeSpan]::FromDays(3650))
+Register-ScheduledTask -TaskName "ZapisTeplotuBrno" -Action $action -Trigger $trigger -Description "Zapisuje teplotu v Brně každou hodinu"
+
+
