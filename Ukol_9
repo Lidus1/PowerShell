@@ -1,0 +1,29 @@
+$keywords = @("password", "token")
+
+$lastClipboard = ""
+
+Write-Host "Sledování schránky spuštěno (Ctrl+C pro ukončení)" -ForegroundColor Cyan
+
+while ($true) {
+    $clipboard = Get-Clipboard -Raw
+
+    if ($clipboard -ne $lastClipboard) {
+
+        foreach ($word in $keywords) {
+            if ($clipboard -match $word) {
+
+                Write-Host "`nNalezeno klíčové slovo:" -NoNewline
+                Write-Host " $word" -ForegroundColor Red
+
+                $highlighted = $clipboard -replace $word, "`e[31m$word`e[0m"
+                Write-Host "Obsah schránky:"
+                Write-Host $highlighted
+            }
+        }
+
+        
+        $lastClipboard = $clipboard
+    }
+
+    Start-Sleep -Seconds 20
+}
