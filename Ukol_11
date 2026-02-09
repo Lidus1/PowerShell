@@ -21,7 +21,7 @@ try {
     Write-Host "[*] Zpracovavam text..." -ForegroundColor Cyan
     $text = [regex]::Replace($content, "<[^>]*>", " ")
 
-    # Regex - jen písmena bez diakritiky
+    # Regex - jen písmena bez diakritik 
     $pattern = "\b[a-zA-Z]{$delka}\b"
 
     $words = [regex]::Matches($text, $pattern) | ForEach-Object { $_.Value.ToLower() }

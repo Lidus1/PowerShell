@@ -106,5 +106,5 @@ foreach ($pwd in $passwordList) {
 
 if (-not $found) {
     Write-Host "[!] Správné heslo v seznamu nalezeno nebylo." -ForegroundColor Red
-}
+}  
 
